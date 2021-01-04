@@ -23,6 +23,10 @@ void resetBuffer() {
   pos = 0;
 }
 
+/**
+ * Parse the AT text and on the basis of the response set the enum status
+ * @param b byte data came from the gsm serial response
+ */
 void parseATText(byte b) {
   buffer[pos++] = b;
   if ( pos >= sizeof(buffer) )
@@ -140,8 +144,13 @@ void parseATText(byte b) {
   }
 }
 
-void sendGSM(const char* msg, int waitMs = 500) {
-  GSM.println(msg);
+/**
+ * Send AT command and data to gsm with required delay
+ * @param msg    AT command with data
+ * @param waitMs delay reqired for response
+ */
+void sendATgsm(const char* msg, int waitMs = 500) {
+  GSM.println(msg); // sending the AT command to gsm module
   delay(waitMs);
   while(GSM.available()) {
     parseATText(GSM.read());
@@ -154,12 +163,12 @@ void setup()
   GSM.begin(9600);
   Serial.begin(9600);
   DynamicJsonDocument doc(1024);
-  sendGSM("AT+SAPBR=3,1,\"APN\",\"airtelgprs.com\"");
-  sendGSM("AT+SAPBR=1,1",3000);
-  sendGSM("AT+HTTPINIT");
-  sendGSM("AT+HTTPPARA=\"CID\",1");
-  sendGSM("AT+HTTPPARA=\"URL\",\"http://www.recipepuppy.com/api/?i=onions,garlic&q=omelet\"");
-  sendGSM("AT+HTTPACTION=0");
+  sendATgsm("AT+SAPBR=3,1,\"APN\",\"airtelgprs.com\"");
+  sendATgsm("AT+SAPBR=1,1",3000);
+  sendATgsm("AT+HTTPINIT");
+  sendATgsm("AT+HTTPPARA=\"CID\",1");
+  sendATgsm("AT+HTTPPARA=\"URL\",\"http://www.recipepuppy.com/api/?i=onions,garlic&q=omelet\"");
+  sendATgsm("AT+HTTPACTION=0");
 }
 
 void loop()
