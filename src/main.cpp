@@ -1,6 +1,9 @@
+
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 SoftwareSerial GSM(3, 2); // RX, TX
+DeserializationError error;
+StaticJsonDocument<200> doc;
 
 enum _parseState {
   PS_DETECT_MSG_TYPE,
@@ -13,8 +16,11 @@ enum _parseState {
 };
 
 byte parseState = PS_DETECT_MSG_TYPE;
-char buffer[80];
+char buffer[100];
 byte pos = 0;
+char json[] =
+     "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
+const char* title;
 
 int contentLength = 0;
 
@@ -31,11 +37,12 @@ void parseATText(byte b) {
   buffer[pos++] = b;
   if ( pos >= sizeof(buffer) )
     resetBuffer(); // just to be safe
-  /*
+
+/*
    // Detailed debugging
    Serial.println();
    Serial.print("state = ");
-   Serial.println(state);
+   //Serial.println(state);
    Serial.print("b = ");
    Serial.println(b);
    Serial.print("pos = ");
@@ -134,8 +141,17 @@ void parseATText(byte b) {
       // for this demo I'm just showing the content bytes in the serial monitor
       Serial.write(b);
       contentLength--;
-      if ( contentLength <= 0 ) {
+
+      if (contentLength <= 0 ) {
         // all content bytes have now been read
+        error = deserializeJson(doc, json);
+        if(error){
+          Serial.print(F("deserializeJson() failed: "));
+          Serial.println(error.f_str());
+          return;
+        }
+        title = doc["sensor"];
+        Serial.print(title);
         parseState = PS_DETECT_MSG_TYPE;
         resetBuffer();
       }
@@ -162,7 +178,6 @@ void setup()
 {
   GSM.begin(9600);
   Serial.begin(9600);
-  DynamicJsonDocument doc(1024);
   sendATgsm("AT+SAPBR=3,1,\"APN\",\"airtelgprs.com\"");
   sendATgsm("AT+SAPBR=1,1",3000);
   sendATgsm("AT+HTTPINIT");
